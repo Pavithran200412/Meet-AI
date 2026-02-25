@@ -1,0 +1,8 @@
+{
+  "name": "Nexus AI Assessment",
+  "description": "An enterprise-grade, adaptive AI technical evaluation platform. Features real-time voice interviews, deep reasoning for code evaluation, and multimodal assessment capabilities.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ]
+}
