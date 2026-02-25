@@ -4,10 +4,8 @@ import { GoogleGenAI } from "@google/genai";
 const apiKey = process.env.API_KEY || "";
 const ai = new GoogleGenAI({ apiKey });
 
-// GitHub token for higher rate limits (optional)
-const githubToken = process.env.GITHUB_TOKEN || "";
-
 // ─── Session Memory (sessionStorage) ─────────────────────────────────────────
+
 
 const MEMORY_PREFIX = "mcp_memory_";
 
@@ -188,7 +186,8 @@ export class NexusMcpClient {
     try {
       console.log(`[MCP GitHub] Fetching repos for ${username}...`);
       const headers: Record<string, string> = { Accept: "application/vnd.github.v3+json" };
-      if (githubToken) headers["Authorization"] = `Bearer ${githubToken}`;
+      // Note: GITHUB_TOKEN is NOT exposed to the browser bundle (security).
+      // Public repos are accessible without auth; rate limit is 60 req/hr.
 
       const res = await fetch(
         `https://api.github.com/users/${username}/repos?sort=updated&per_page=8`,
