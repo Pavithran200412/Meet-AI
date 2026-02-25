@@ -1,0 +1,18 @@
+[build]
+  command   = "npm run build"
+  publish   = "dist"
+
+# API_KEY and HF_TOKEN are intentionally exposed to the browser
+# (this is a pure client-side app with no backend; the Gemini + HF
+# keys must be present in the bundle for the app to function).
+# All other secrets (GITHUB_TOKEN, DATABASE_URL, etc.) are NOT
+# included in the bundle — see vite.config.ts for the allowlist.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "API_KEY,HF_TOKEN"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
