@@ -7,6 +7,7 @@ export enum Sender {
 export enum InterviewMode {
   TEXT = 'TEXT', // Standard coding round
   VOICE = 'VOICE', // Live API phone screen
+  VIDEO = 'VIDEO', // FaceTime-style video interview
   ANALYSIS = 'ANALYSIS' // Deep thinking evaluation
 }
 
@@ -17,10 +18,10 @@ export enum Persona {
 
 export interface GroundingChunk {
   web?: { uri: string; title: string };
-  maps?: { 
-    uri: string; 
-    title: string; 
-    placeAnswerSources?: { reviewSnippets?: { text: string }[] }[] 
+  maps?: {
+    uri: string;
+    title: string;
+    placeAnswerSources?: { reviewSnippets?: { text: string }[] }[]
   };
 }
 
@@ -64,4 +65,11 @@ export interface Peer {
   lastSeen: number;
   username: string;
   color: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'user' | 'admin';
 }

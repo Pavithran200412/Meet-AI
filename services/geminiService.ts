@@ -5,6 +5,7 @@ import { GroundingChunk, Persona } from "../types";
 import { createPcmBlob } from "../utils/audioUtils";
 import { retrieveContext, recordInterviewFact } from "../utils/ragEngine";
 import { mcpClient } from "./mcpClient";
+import { streamInterviewQuestion as hfStreamInterview } from "./huggingfaceService";
 
 // Initialize Gemini Client
 const apiKey = process.env.API_KEY || "missing_api_key";
@@ -233,12 +234,22 @@ export const generateInterviewQuestion = async (
   } catch (error: any) {
     console.error("Gemini API Error:", error);
 
+    // Fallback 1: DeepSeek via HF Router
     const deepSeekFallback = await generateWithDeepSeek(baseInstruction, prompt);
     if (deepSeekFallback) {
       return {
         ...deepSeekFallback,
         text: deepSeekFallback.text
       };
+    }
+
+    // Fallback 2: HuggingFace Inference (Mistral)
+    try {
+      console.log("Falling back to HuggingFace Inference...");
+      const hfResult = await hfStreamInterview(prompt, persona);
+      return { ...hfResult, grounding: [] };
+    } catch (hfError: any) {
+      console.warn("HuggingFace fallback also failed:", hfError.message);
     }
 
     return { text: `Connection Error: ${error.message || "Please check your network."}` };

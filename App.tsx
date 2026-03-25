@@ -11,11 +11,20 @@ import { decodeAudioData, downsampleBuffer } from './utils/audioUtils';
 import { TerminalMessage } from './components/TerminalMessage';
 import { CodeEditor } from './components/CodeEditor';
 import { AudioVisualizer } from './components/AudioVisualizer';
-import { Message, Sender, InterviewMode, Persona, Attachment } from './types';
+import { VideoInterview } from './components/VideoInterview';
+import { AuthPage } from './components/AuthPage';
+import { AdminDashboard } from './components/AdminDashboard';
+import { authService } from './services/authService';
+import { Message, Sender, InterviewMode, Persona, Attachment, User } from './types';
 
 const App: React.FC = () => {
+    // Auth State
+    const [user, setUser] = useState<User | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isAuthLoading, setIsAuthLoading] = useState(true);
+
     // Navigation State
-    const [activeTab, setActiveTab] = useState<'chat' | 'code'>('chat');
+    const [activeTab, setActiveTab] = useState<'chat' | 'code' | 'admin'>('chat');
 
     // App Logic State
     const [messages, setMessages] = useState<Message[]>([]);
@@ -48,6 +57,15 @@ const App: React.FC = () => {
 
     // Init
     useEffect(() => {
+        // Check Auth
+        authService.getCurrentUser().then(userData => {
+            if (userData) {
+                setUser(userData);
+                setIsAuthenticated(true);
+            }
+            setIsAuthLoading(false);
+        });
+
         // Immediate welcome message for perceived speed
         addMessage(Sender.AI, "Welcome. I am your Nexus AI Assistant. Ready for your technical assessment.");
 
@@ -338,9 +356,27 @@ const App: React.FC = () => {
             }
         } catch (err: any) {
             addMessage(Sender.SYSTEM, "Upload Failed");
-        }
-        finally { if (fileInputRef.current) fileInputRef.current.value = ''; }
+        } finally { if (fileInputRef.current) fileInputRef.current.value = ''; }
     };
+
+    const handleLogout = () => {
+        authService.removeToken();
+        setUser(null);
+        setIsAuthenticated(false);
+        setActiveTab('chat');
+    };
+
+    if (isAuthLoading) {
+        return (
+            <div className="h-[100dvh] bg-[#000] flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
+
+    if (!isAuthenticated) {
+        return <AuthPage onLogin={(u) => { setUser(u); setIsAuthenticated(true); }} />;
+    }
 
     return (
         <div className="h-[100dvh] bg-[#121212] text-[#E3E3E3] flex flex-col overflow-hidden font-sans">
@@ -392,14 +428,40 @@ const App: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                             {resumeData && <span className="material-symbols-rounded text-green-400 text-[20px]" title="Resume Loaded">description</span>}
+
+                            {user?.role === 'admin' && (
+                                <button
+                                    onClick={() => setActiveTab('admin')}
+                                    className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1 transition-colors ${activeTab === 'admin' ? 'bg-purple-600 text-white' : 'bg-purple-900/40 text-purple-300 hover:bg-purple-800/50'}`}
+                                >
+                                    <span className="material-symbols-rounded text-[16px]">admin_panel_settings</span>
+                                    <span>ADMIN</span>
+                                </button>
+                            )}
+
+                            <button
+                                onClick={() => setMode(InterviewMode.VIDEO)}
+                                className="bg-green-600/10 hover:bg-green-600/20 text-green-500 border border-green-600/50 p-2 rounded-full flex items-center justify-center transition-all active:scale-95"
+                                title="Video Interview"
+                            >
+                                <span className="material-symbols-rounded text-[20px]">videocam</span>
+                            </button>
 
                             <button
                                 onClick={() => setPersona(persona === Persona.INTERVIEWER ? Persona.TUTOR : Persona.INTERVIEWER)}
                                 className="bg-[#2C2C2C] text-[10px] font-bold px-3 py-1.5 rounded-full border border-[#3C3C3C] text-gray-300 active:bg-[#3C3C3C] transition-colors"
                             >
                                 {persona} MODE
+                            </button>
+
+                            <button
+                                onClick={handleLogout}
+                                className="text-gray-400 hover:text-white transition-colors flex items-center"
+                                title="Sign Out"
+                            >
+                                <span className="material-symbols-rounded text-[20px]">logout</span>
                             </button>
                         </div>
                     </>
@@ -455,6 +517,11 @@ const App: React.FC = () => {
                 {/* Code Screen */}
                 <div className={`absolute inset-0 bg-[#0d1117] transition-transform duration-300 ${activeTab === 'code' ? 'translate-x-0' : 'translate-x-full'}`}>
                     <CodeEditor onReviewRequest={handleCodeReviewRequest} />
+                </div>
+
+                {/* Admin Dashboard Screen */}
+                <div className={`absolute inset-0 bg-[#0d1117] transition-transform duration-300 ${activeTab === 'admin' ? 'translate-x-0' : 'translate-x-full'}`}>
+                    <AdminDashboard />
                 </div>
             </div>
 
@@ -521,6 +588,14 @@ const App: React.FC = () => {
                     </button>
 
                     <button
+                        onClick={() => setMode(InterviewMode.VIDEO)}
+                        className={`flex flex-col items-center gap-1 w-full h-full justify-center text-green-500`}
+                    >
+                        <span className={`material-symbols-rounded transition-transform`}>video_camera_front</span>
+                        <span className="text-[10px] font-medium">FaceTime</span>
+                    </button>
+
+                    <button
                         onClick={() => setActiveTab('code')}
                         className={`flex flex-col items-center gap-1 w-full h-full justify-center ${activeTab === 'code' ? 'text-blue-400' : 'text-gray-500'}`}
                     >
@@ -529,6 +604,13 @@ const App: React.FC = () => {
                     </button>
                 </div>
             </nav>
+            {/* 5. Video Interview Overlay */}
+            {mode === InterviewMode.VIDEO && (
+                <VideoInterview
+                    persona={persona}
+                    onEnd={() => setMode(InterviewMode.TEXT)}
+                />
+            )}
         </div>
     );
 };
