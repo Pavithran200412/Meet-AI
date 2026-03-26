@@ -5,9 +5,9 @@ import User from '../models/User.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_change_in_production';
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE';
 
-const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+// We initialize client dynamically inside the route to ensure process.env is fully loaded and trimmed.
+const client = new OAuth2Client();
 
 // Helper to generate token
 const generateToken = (user) => {
@@ -97,10 +97,18 @@ router.post('/google', async (req, res) => {
     try {
         const { credential } = req.body;
 
+        // Safely get and trim the Client ID at runtime
+        const rawClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '';
+        const activeClientId = rawClientId.trim();
+
+        if (!activeClientId || activeClientId === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
+            return res.status(400).json({ message: 'Server misses valid Google Client ID' });
+        }
+
         // Verify Google ID token
         const ticket = await client.verifyIdToken({
             idToken: credential,
-            audience: GOOGLE_CLIENT_ID,
+            audience: activeClientId,
         });
         const payload = ticket.getPayload();
         const { email, name } = payload;
