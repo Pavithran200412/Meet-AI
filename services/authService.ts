@@ -23,7 +23,8 @@ export const authService = {
 
     // Signup
     signup: async (name: string, email: string, password: string): Promise<AuthResponse> => {
-        const res = await fetch('/api/auth/signup', {
+        const API_BASE = import.meta.env.VITE_API_URL || '';
+        const res = await fetch(`${API_BASE}/api/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password }),
@@ -38,7 +39,8 @@ export const authService = {
 
     // Login
     login: async (email: string, password: string): Promise<AuthResponse> => {
-        const res = await fetch('/api/auth/login', {
+        const API_BASE = import.meta.env.VITE_API_URL || '';
+        const res = await fetch(`${API_BASE}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -53,7 +55,8 @@ export const authService = {
 
     // Google Login
     googleLogin: async (credential: string): Promise<AuthResponse> => {
-        const res = await fetch('/api/auth/google', {
+        const API_BASE = import.meta.env.VITE_API_URL || '';
+        const res = await fetch(`${API_BASE}/api/auth/google`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ credential }),
@@ -72,7 +75,8 @@ export const authService = {
         if (!token) return null;
 
         try {
-            const res = await fetch('/api/auth/me', {
+            const API_BASE = import.meta.env.VITE_API_URL || '';
+            const res = await fetch(`${API_BASE}/api/auth/me`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
 
@@ -94,7 +98,8 @@ export const authService = {
         const token = authService.getToken();
         if (!token) throw new Error('Not authenticated');
 
-        const res = await fetch('/api/admin/users', {
+        const API_BASE = import.meta.env.VITE_API_URL || '';
+        const res = await fetch(`${API_BASE}/api/admin/users`, {
             headers: { 'Authorization': `Bearer ${token}` },
         });
 
