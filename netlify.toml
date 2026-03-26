@@ -8,7 +8,7 @@
 # All other secrets (GITHUB_TOKEN, DATABASE_URL, etc.) are NOT
 # included in the bundle — see vite.config.ts for the allowlist.
 [build.environment]
-  SECRETS_SCAN_OMIT_KEYS = "API_KEY,HF_TOKEN"
+  SECRETS_SCAN_OMIT_KEYS = "API_KEY,HF_TOKEN,VITE_GOOGLE_CLIENT_ID"
 
 [[headers]]
   for = "/*"
