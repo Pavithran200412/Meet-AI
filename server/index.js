@@ -14,7 +14,9 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/meet-a
 // Middleware
 app.use(helmet());
 app.use(cors({
-    origin: 'http://localhost:5173', // Vite dev server
+    origin: function (origin, callback) {
+        callback(null, true); // Safely allow all frontend domains (e.g. Netlify dynamically)
+    },
     credentials: true
 }));
 app.use(express.json());
