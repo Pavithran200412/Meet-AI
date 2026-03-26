@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 const CHANNEL_NAME = 'nexus_ai_collab_v1';
 const HEARTBEAT_INTERVAL = 3000;
 const PEER_TIMEOUT = 7000;
-
 class CollaborationService {
   private channel: BroadcastChannel;
   private userId: string;
