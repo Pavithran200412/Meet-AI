@@ -123,7 +123,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                             }
                         }}
                         onError={() => {
-                            setError('Google Sign-In was unsuccessful or canceled');
+                            setError(`Google Sign-In failed. If you see "origin_mismatch", add "${window.location.origin}" as an Authorized JavaScript Origin in your Google Cloud Console OAuth settings.`);
                         }}
                         theme="filled_black"
                         size="large"

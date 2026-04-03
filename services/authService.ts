@@ -11,6 +11,38 @@ export interface AuthResponse {
     };
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
+/**
+ * Helper: fetch and safely parse JSON.
+ * If the response isn't JSON (e.g. the server returned HTML because the
+ * backend isn't running), throw a descriptive error instead of the
+ * cryptic "Unexpected token '<'" message.
+ */
+async function safeFetchJSON(url: string, init?: RequestInit): Promise<{ res: Response; data: any }> {
+    let res: Response;
+    try {
+        res = await fetch(url, init);
+    } catch (networkErr: any) {
+        throw new Error(
+            'Cannot reach the server. Please make sure the backend is running and try again.'
+        );
+    }
+
+    const contentType = res.headers.get('content-type') || '';
+
+    // If the response is not JSON, the backend is probably not running and
+    // the static file server (e.g. Netlify / Vite) returned the HTML shell.
+    if (!contentType.includes('application/json')) {
+        throw new Error(
+            'Backend server is not reachable. Please ensure the backend (node server/index.js) is running.'
+        );
+    }
+
+    const data = await res.json();
+    return { res, data };
+}
+
 export const authService = {
     // Get token from localStorage
     getToken: () => localStorage.getItem('meet_ai_token'),
@@ -23,14 +55,12 @@ export const authService = {
 
     // Signup
     signup: async (name: string, email: string, password: string): Promise<AuthResponse> => {
-        const API_BASE = import.meta.env.VITE_API_URL || '';
-        const res = await fetch(`${API_BASE}/api/auth/signup`, {
+        const { res, data } = await safeFetchJSON(`${API_BASE}/api/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password }),
         });
 
-        const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Signup failed');
 
         authService.setToken(data.token);
@@ -39,14 +69,12 @@ export const authService = {
 
     // Login
     login: async (email: string, password: string): Promise<AuthResponse> => {
-        const API_BASE = import.meta.env.VITE_API_URL || '';
-        const res = await fetch(`${API_BASE}/api/auth/login`, {
+        const { res, data } = await safeFetchJSON(`${API_BASE}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
         });
 
-        const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Login failed');
 
         authService.setToken(data.token);
@@ -55,14 +83,12 @@ export const authService = {
 
     // Google Login
     googleLogin: async (credential: string): Promise<AuthResponse> => {
-        const API_BASE = import.meta.env.VITE_API_URL || '';
-        const res = await fetch(`${API_BASE}/api/auth/google`, {
+        const { res, data } = await safeFetchJSON(`${API_BASE}/api/auth/google`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ credential }),
         });
 
-        const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Google login failed');
 
         authService.setToken(data.token);
@@ -75,18 +101,16 @@ export const authService = {
         if (!token) return null;
 
         try {
-            const API_BASE = import.meta.env.VITE_API_URL || '';
-            const res = await fetch(`${API_BASE}/api/auth/me`, {
+            const { res, data } = await safeFetchJSON(`${API_BASE}/api/auth/me`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
 
             if (!res.ok) {
-                // Token might be expired or invalid
                 if (res.status === 401) authService.removeToken();
                 return null;
             }
 
-            return await res.json();
+            return data;
         } catch (e) {
             console.error('Error fetching current user:', e);
             return null;
@@ -98,12 +122,10 @@ export const authService = {
         const token = authService.getToken();
         if (!token) throw new Error('Not authenticated');
 
-        const API_BASE = import.meta.env.VITE_API_URL || '';
-        const res = await fetch(`${API_BASE}/api/admin/users`, {
+        const { res, data } = await safeFetchJSON(`${API_BASE}/api/admin/users`, {
             headers: { 'Authorization': `Bearer ${token}` },
         });
 
-        const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to fetch users');
 
         return data;
