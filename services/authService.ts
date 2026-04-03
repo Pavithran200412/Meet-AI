@@ -29,17 +29,24 @@ async function safeFetchJSON(url: string, init?: RequestInit): Promise<{ res: Re
         );
     }
 
-    const contentType = res.headers.get('content-type') || '';
+    // Try to parse the body as JSON. If the backend returned HTML (e.g. the
+    // static‑file server answered instead of the API), we'll catch the parse
+    // error and throw a human‑readable message.
+    const text = await res.text();
 
-    // If the response is not JSON, the backend is probably not running and
-    // the static file server (e.g. Netlify / Vite) returned the HTML shell.
-    if (!contentType.includes('application/json')) {
-        throw new Error(
-            'Backend server is not reachable. Please ensure the backend (node server/index.js) is running.'
-        );
+    let data: any;
+    try {
+        data = JSON.parse(text);
+    } catch {
+        // If the raw text starts with '<' it's almost certainly HTML.
+        if (text.trimStart().startsWith('<')) {
+            throw new Error(
+                'Backend server is not reachable. Please ensure the backend (node server/index.js) is running.'
+            );
+        }
+        throw new Error(`Unexpected server response: ${text.slice(0, 120)}`);
     }
 
-    const data = await res.json();
     return { res, data };
 }
 
