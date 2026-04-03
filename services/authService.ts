@@ -34,6 +34,11 @@ async function safeFetchJSON(url: string, init?: RequestInit): Promise<{ res: Re
     // error and throw a human‑readable message.
     const text = await res.text();
 
+    // Empty body — build a fallback object from the HTTP status
+    if (!text.trim()) {
+        return { res, data: { message: res.statusText || `Request failed (${res.status})` } };
+    }
+
     let data: any;
     try {
         data = JSON.parse(text);
